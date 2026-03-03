@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>System Metrics Dashboard</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0f1115;
+        --panel: #171a21;
+        --panel-border: #262b36;
+        --text: #e9eef8;
+        --muted: #a3b0c8;
+        --accent: #4dd0e1;
+        --good: #00e676;
+        --warn: #ffb300;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 24px;
+        font-family:
+          Inter,
+          Segoe UI,
+          system-ui,
+          -apple-system,
+          sans-serif;
+        background: linear-gradient(180deg, #0f1115 0%, #121622 100%);
+        color: var(--text);
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+
+      h1 {
+        margin: 0 0 8px;
+        font-size: 28px;
+      }
+
+      .sub {
+        margin: 0 0 16px;
+        color: var(--muted);
+      }
+
+      .status-bar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        padding: 12px 16px;
+        border: 1px solid var(--panel-border);
+        background: var(--panel);
+        border-radius: 10px;
+        margin-bottom: 18px;
+      }
+
+      .status-pill {
+        padding: 2px 10px;
+        border-radius: 999px;
+        border: 1px solid #2e394a;
+        font-weight: 600;
+      }
+
+      .status-pill.connected {
+        color: var(--good);
+        border-color: #1f5d3f;
+        background: #0f2a1f;
+      }
+
+      .status-pill.disconnected {
+        color: #ff8a80;
+        border-color: #5a2727;
+        background: #2a1313;
+      }
+
+      .grid {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        margin-bottom: 18px;
+      }
+
+      .card {
+        background: var(--panel);
+        border: 1px solid var(--panel-border);
+        border-radius: 12px;
+        padding: 14px;
+      }
+
+      .label {
+        color: var(--muted);
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 6px;
+      }
+
+      .value {
+        font-size: 24px;
+        font-weight: 700;
+      }
+
+      .meta {
+        margin-top: 6px;
+        font-size: 13px;
+        color: var(--muted);
+      }
+
+      .section {
+        margin-bottom: 16px;
+      }
+
+      .section h3 {
+        margin: 10px 0;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        overflow: hidden;
+        border-radius: 10px;
+        border: 1px solid var(--panel-border);
+        background: var(--panel);
+      }
+
+      th,
+      td {
+        text-align: left;
+        padding: 10px;
+        border-bottom: 1px solid #252b36;
+        font-size: 14px;
+      }
+
+      th {
+        color: var(--muted);
+        font-weight: 600;
+      }
+
+      tr:last-child td {
+        border-bottom: none;
+      }
+
+      pre {
+        background: #0d1017;
+        border: 1px solid var(--panel-border);
+        color: #8ff0ff;
+        padding: 12px;
+        border-radius: 10px;
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        max-height: 34vh;
+        overflow: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>System Metrics Dashboard</h1>
+      <p class="sub">Live data stream from SSE endpoint: /api/system-metrics</p>
+
+      <div class="status-bar">
+        <div>
+          <strong>Status:</strong>
+          <span id="status" class="status-pill">Connecting...</span>
+        </div>
+        <div><strong>Last update:</strong> <span id="lastUpdate">-</span></div>
+        <div><strong>Host:</strong> <span id="hostName">-</span></div>
+      </div>
+
+      <div class="grid">
+        <div class="card">
+          <div class="label">CPU Usage</div>
+          <div class="value" id="cpuUsage">-</div>
+          <div class="meta" id="cpuBreakdown">user: - | system: -</div>
+        </div>
+        <div class="card">
+          <div class="label">RAM Usage</div>
+          <div class="value" id="ramUsage">-</div>
+          <div class="meta" id="ramBreakdown">used: - / total: -</div>
+        </div>
+        <div class="card">
+          <div class="label">Uptime</div>
+          <div class="value" id="uptime">-</div>
+          <div class="meta">System running time</div>
+        </div>
+        <div class="card">
+          <div class="label">Monitors</div>
+          <div class="value" id="monitors">-</div>
+          <div class="meta" id="macAddress">MAC: -</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <h3>Network</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>RX Total</th>
+              <th>TX Total</th>
+              <th>RX/s</th>
+              <th>TX/s</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td id="rxBytes">-</td>
+              <td id="txBytes">-</td>
+              <td id="rxSec">-</td>
+              <td id="txSec">-</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section">
+        <h3>Disk Usage</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Mount</th>
+              <th>Type</th>
+              <th>Used</th>
+              <th>Total</th>
+              <th>Usage</th>
+            </tr>
+          </thead>
+          <tbody id="diskTableBody">
+            <tr>
+              <td colspan="5">No disk data</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="section">
+        <h3>Formatted Payload</h3>
+        <pre id="formattedOutput"></pre>
+      </div>
+
+      <div class="section">
+        <h3>Raw Payload</h3>
+        <pre id="rawOutput"></pre>
+      </div>
+    </div>
+
+    <script>
+      const statusEl = document.getElementById("status");
+      const lastUpdateEl = document.getElementById("lastUpdate");
+      const hostNameEl = document.getElementById("hostName");
+      const cpuUsageEl = document.getElementById("cpuUsage");
+      const cpuBreakdownEl = document.getElementById("cpuBreakdown");
+      const ramUsageEl = document.getElementById("ramUsage");
+      const ramBreakdownEl = document.getElementById("ramBreakdown");
+      const uptimeEl = document.getElementById("uptime");
+      const monitorsEl = document.getElementById("monitors");
+      const macAddressEl = document.getElementById("macAddress");
+      const rxBytesEl = document.getElementById("rxBytes");
+      const txBytesEl = document.getElementById("txBytes");
+      const rxSecEl = document.getElementById("rxSec");
+      const txSecEl = document.getElementById("txSec");
+      const diskTableBodyEl = document.getElementById("diskTableBody");
+      const formattedOutputEl = document.getElementById("formattedOutput");
+      const rawOutputEl = document.getElementById("rawOutput");
+
+      function setStatus(text, isConnected) {
+        statusEl.textContent = text;
+        statusEl.classList.remove("connected", "disconnected");
+        statusEl.classList.add(isConnected ? "connected" : "disconnected");
+      }
+
+      function safeParseJson(text) {
+        try {
+          return { ok: true, data: JSON.parse(text) };
+        } catch (error) {
+          return { ok: false, error };
+        }
+      }
+
+      function formatBytes(value) {
+        if (!Number.isFinite(value) || value < 0) {
+          return "-";
+        }
+        const units = ["B", "KB", "MB", "GB", "TB"];
+        let size = value;
+        let unitIndex = 0;
+        while (size >= 1024 && unitIndex < units.length - 1) {
+          size /= 1024;
+          unitIndex += 1;
+        }
+        return `${size.toFixed(size >= 100 ? 0 : 2)} ${units[unitIndex]}`;
+      }
+
+      function formatPercent(value) {
+        if (!Number.isFinite(value)) {
+          return "-";
+        }
+        return `${value.toFixed(2)}%`;
+      }
+
+      function formatUptime(seconds) {
+        if (!Number.isFinite(seconds) || seconds < 0) {
+          return "-";
+        }
+        const days = Math.floor(seconds / 86400);
+        const hours = Math.floor((seconds % 86400) / 3600);
+        const minutes = Math.floor((seconds % 3600) / 60);
+        const secs = Math.floor(seconds % 60);
+
+        const parts = [];
+        if (days > 0) parts.push(`${days}d`);
+        parts.push(`${hours}h`, `${minutes}m`, `${secs}s`);
+        return parts.join(" ");
+      }
+
+      function renderDiskRows(disks) {
+        if (!Array.isArray(disks) || disks.length === 0) {
+          diskTableBodyEl.innerHTML =
+            '<tr><td colspan="5">No disk data</td></tr>';
+          return;
+        }
+
+        const rows = disks
+          .map((disk) => {
+            const used = formatBytes(Number(disk.used));
+            const total = formatBytes(Number(disk.size));
+            const usage = formatPercent(Number(disk.use));
+            return `
+              <tr>
+                <td>${disk.mount || disk.fs || "-"}</td>
+                <td>${disk.type || "-"}</td>
+                <td>${used}</td>
+                <td>${total}</td>
+                <td>${usage}</td>
+              </tr>
+            `;
+          })
+          .join("");
+
+        diskTableBodyEl.innerHTML = rows;
+      }
+
+      function renderMetrics(rawData) {
+        const parsed = safeParseJson(rawData);
+        if (
+          !parsed.ok ||
+          typeof parsed.data !== "object" ||
+          parsed.data === null
+        ) {
+          console.warn("Skip invalid SSE payload:", rawData);
+          return;
+        }
+
+        const data = parsed.data;
+
+        const cpuCurrent = Number(data.cpuUsage?.currentLoad);
+        const cpuUser = Number(data.cpuUsage?.user);
+        const cpuSystem = Number(data.cpuUsage?.system);
+        cpuUsageEl.textContent = formatPercent(cpuCurrent);
+        cpuBreakdownEl.textContent = `user: ${formatPercent(cpuUser)} | system: ${formatPercent(cpuSystem)}`;
+
+        const ramTotal = Number(data.ram?.total);
+        const ramUsed = Number(data.ram?.used);
+        const ramPercent = ramTotal > 0 ? (ramUsed / ramTotal) * 100 : NaN;
+        ramUsageEl.textContent = formatPercent(ramPercent);
+        ramBreakdownEl.textContent = `used: ${formatBytes(ramUsed)} / total: ${formatBytes(ramTotal)}`;
+
+        uptimeEl.textContent = formatUptime(Number(data.uptime));
+        monitorsEl.textContent = Number.isFinite(Number(data.monitors))
+          ? String(data.monitors)
+          : "-";
+        macAddressEl.textContent = `MAC: ${data.macAddress || "-"}`;
+
+        rxBytesEl.textContent = formatBytes(
+          Number(data.networkUsage?.rx_bytes),
+        );
+        txBytesEl.textContent = formatBytes(
+          Number(data.networkUsage?.tx_bytes),
+        );
+        rxSecEl.textContent = `${formatBytes(Number(data.networkUsage?.rx_sec))}/s`;
+        txSecEl.textContent = `${formatBytes(Number(data.networkUsage?.tx_sec))}/s`;
+
+        hostNameEl.textContent = data.osInfo?.hostname || "-";
+        renderDiskRows(data.diskUsage);
+
+        formattedOutputEl.innerText = JSON.stringify(parsed.data, null, 2);
+        rawOutputEl.innerText = rawData;
+        lastUpdateEl.innerText = new Date().toLocaleString();
+      }
+
+      const source = new EventSource(
+        "http://localhost:3001/api/system-metrics",
+      );
+
+      source.onopen = () => {
+        setStatus("Connected", true);
+      };
+
+      source.addEventListener("metrics", (event) => {
+        setStatus("Connected", true);
+        renderMetrics(event.data);
+      });
+
+      source.addEventListener("error", (event) => {
+        setStatus("Server Error Event", false);
+        if (typeof event.data === "string" && event.data.length > 0) {
+          const parsed = safeParseJson(event.data);
+          if (parsed.ok) {
+            console.error("Server metric error event:", parsed.data);
+            return;
+          }
+        }
+        console.error("Server metric error event received.");
+      });
+
+      source.onmessage = (event) => {
+        setStatus("Connected", true);
+        renderMetrics(event.data);
+      };
+
+      source.onerror = (error) => {
+        setStatus("Disconnected / Reconnecting...", false);
+        console.error("SSE Connection Error:", error);
+      };
+
+      setStatus("Connecting...", false);
+    </script>
+  </body>
+</html>
