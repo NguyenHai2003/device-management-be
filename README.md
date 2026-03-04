@@ -35,7 +35,7 @@ Device Management Backend là dịch vụ API đảm nhiệm việc thu thập v
 4. Kiểm tra API SSE hoạt động tại luồng: `http://localhost:3001/api/system-metrics`
 
 ## 5. Kiểm thử tự động
-*Lưu ý: Các bài kiểm thử tích hợp tự động (E2E) đối với luồng dữ liệu từ Backend được quản lý tập trung ở thư mục `playwright-test`.*
+*Lưu ý: Các bài kiểm thử tích hợp tự động (E2E) đối với luồng dữ liệu từ Backend được quản lý tập trung ở thư mục 'https://github.com/NguyenHai2003/playwright-test-device-management/blob/c0ee61e953652620992cec6b917ca07428cbf9a7/README.md'.*
 
 ## 6. Triển khai (Deployment lên AWS EC2)
 Dự án được cấu hình sẵn Dockerfile để dễ dàng đóng gói và deploy lên máy chủ AWS EC2.
